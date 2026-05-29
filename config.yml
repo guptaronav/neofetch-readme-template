@@ -1,35 +1,40 @@
 # ─────────────────────────────────────────────────────────────────
 # Neofetch Profile README — your config
 # ─────────────────────────────────────────────────────────────────
-# Edit this file, run `python build.py`, and your SVGs regenerate.
-# That's the whole thing. No code to touch.
+# 1. Edit this file with your info
+# 2. (Optional) Drop portrait.png or portrait.jpg in this folder
+# 3. Run `python build.py`  →  light_mode.svg + dark_mode.svg
+# That's the whole thing. No other code to touch.
 # ─────────────────────────────────────────────────────────────────
 
-# Top header: appears as "user@host" at the top of the box.
+# Top header — renders as "user@host ─────────────────"
 user: yourname
-host: localhost
+host: github
 
-# Optional birthday for the dynamic "Uptime" counter (years/months/days since).
-# Format: YYYY-MM-DD. Leave as `null` to hide the Uptime line entirely.
-# Tip: in Milestone 3 (GitHub Action), this gets overridden by a repo secret
-# so you never have to commit your real birthday.
+# Optional Uptime counter — shows your age as X years, Y months, Z days.
+# Format: YYYY-MM-DD. Set null to hide the line entirely.
+# Keep your birthday private: leave null here, add a BIRTHDAY repo secret instead
+# (Settings → Secrets and variables → Actions → New repository secret).
 birthday: null
 
-# Sections render top-to-bottom in the order listed here.
+# ─────────────────────────────────────────────────────────────────
+# Sections
+# ─────────────────────────────────────────────────────────────────
+# Each section is a group of "Key: Value" lines.
+#   title: ""         →  no divider header (plain group)
+#   title: "Contact"  →  renders "- Contact ─────────"
 #
-# Each section has:
-#   - title:  a string like "Contact" → renders as "- Contact -—————" divider.
-#             Use "" (empty) for an unlabeled group (e.g., the system info up top).
-#   - items:  list of "Key: Value" strings, exactly as they should appear.
+# Compound keys like "Languages.Programming" render both halves
+# in the accent color: Languages.Programming: Python, Go
 #
-# Add, remove, reorder anything. The renderer adapts the layout automatically.
+# Add, remove, or reorder anything — layout adjusts automatically.
 
 sections:
   - title: ""
     items:
-      - "OS: macOS"
-      - "Host: Your Org"
-      - "Kernel: Engineer"
+      - "OS: macOS, iOS, Windows 11"
+      - "Host: Your School / Company"
+      - "Kernel: Student / Engineer / Designer"
       - "IDE: VS Code"
       - "Shell: zsh"
 
@@ -37,7 +42,7 @@ sections:
     items:
       - "Languages.Programming: Python, TypeScript"
       - "Languages.Computer: HTML, CSS, JSON, YAML"
-      - "Languages.Real: English"
+      - "Languages.Real: English, Spanish"
 
   - title: ""
     items:

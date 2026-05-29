@@ -48,8 +48,8 @@ We'll know we're right when **first-time setup completes without needing to open
 |---|---|---|---|---|
 | 1 | Core renderer | A user can edit config.yml, run a single local script, and produce working light/dark SVGs (no Action yet) | complete | `.claude/plans/neofetch-readme-template.plan.md` |
 | 2 | Image → ASCII pipeline | User drops `portrait.png`, gets ASCII embedded in SVGs automatically | complete | `.claude/plans/neofetch-readme-template.plan.md` |
-| 3 | GitHub Action + optional secrets | Push to main triggers full regen; daily cron refreshes Uptime when BIRTHDAY secret is set | in-progress | `.claude/plans/neofetch-readme-template.plan.md` |
-| 4 | Template-repo polish | "Use this template" works end-to-end; README guides a stranger from zero to live profile in <10 min with screenshots | pending | — |
+| 3 | GitHub Action + optional secrets | Push to main triggers full regen; daily cron refreshes Uptime when BIRTHDAY secret is set | complete | `.claude/plans/neofetch-readme-template.plan.md` |
+| 4 | Template-repo polish | "Use this template" works end-to-end; README guides a stranger from zero to live profile in <10 min with screenshots | complete | `.claude/plans/neofetch-readme-template.plan.md` |
 
 ## Open Questions
 - [ ] Which ASCII conversion library produces the best portrait output? (`ascii-magic`, `image-to-ascii`, `Pillow` + custom) — needs a small spike comparing outputs on real photos
