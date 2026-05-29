@@ -2,7 +2,7 @@
 
 A fork-and-customize template for a dynamic neofetch-style GitHub profile README.
 
-> **Status**: Milestone 2 of 4 — local renderer + automatic portrait→ASCII conversion work. GitHub Action + secrets (M3) and "Use this template" polish (M4) are coming.
+> **Status**: Milestone 3 of 4 — local renderer, auto portrait→ASCII, and GitHub Actions all work. "Use this template" polish (M4) is coming.
 
 ## Quick start (local)
 
@@ -43,7 +43,32 @@ If no portrait is found, the build falls back to `ascii-art.txt` so you always h
 
 ## Birthday → Uptime counter
 
-The `birthday` field in `config.yml` powers the "Uptime" line that shows your age in years/months/days. Leave it as `null` to hide that line entirely. Coming in Milestone 3: store the birthday as a repo secret instead of in the file.
+The Uptime line shows your age as *X years, Y months, Z days*. Two ways to set it:
+
+**Option A — plain config (simplest)**  
+Set `birthday` in `config.yml`:
+```yaml
+birthday: "2000-01-15"   # YYYY-MM-DD
+```
+
+**Option B — repo secret (keeps birthday private)**  
+Leave `birthday: null` in `config.yml`, then:
+1. Go to your repo → **Settings → Secrets and variables → Actions**
+2. Click **New repository secret**
+3. Name: `BIRTHDAY`, Value: `2000-01-15` (YYYY-MM-DD)
+
+The GitHub Action picks it up automatically. Config always wins if both are set.
+
+Leave `birthday: null` and skip the secret entirely to hide Uptime.
+
+## GitHub Action
+
+A workflow runs automatically on every push to `main` (when relevant files change) and daily at 00:15 UTC to keep Uptime fresh. It:
+1. Installs dependencies
+2. Runs `python build.py` (reading `BIRTHDAY` secret if set)
+3. Commits the updated `light_mode.svg` and `dark_mode.svg` back to the repo
+
+No extra setup needed — it works as soon as you push to GitHub.
 
 ## Tests
 
@@ -56,7 +81,7 @@ pytest test_build.py -v
 
 - [x] **M1** — Core renderer: `config.yml` → SVGs via `python build.py`
 - [x] **M2** — Drop a `portrait.png` in the repo, get ASCII automatically
-- [ ] **M3** — GitHub Action: daily refresh + optional `BIRTHDAY` repo secret
+- [x] **M3** — GitHub Action: daily refresh + optional `BIRTHDAY` repo secret
 - [ ] **M4** — One-click "Use this template" with screenshots and walkthrough
 
 ---

@@ -1,0 +1,59 @@
+name: Build SVGs
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "config.yml"
+      - "ascii-art.txt"
+      - "portrait.png"
+      - "portrait.jpg"
+      - "build.py"
+      - "image_to_ascii.py"
+  schedule:
+    # Runs daily at 00:15 UTC to refresh the Uptime counter.
+    # The 15-minute offset avoids peak GitHub Actions load at :00.
+    - cron: "15 0 * * *"
+  workflow_dispatch: # Allow manual runs from the Actions tab
+
+permissions:
+  contents: write # Needed to commit the generated SVGs back
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: "pip"
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Generate SVGs
+        env:
+          # If the BIRTHDAY repo secret is set, it is passed here as an env var.
+          # build.py reads it when config.yml birthday is null.
+          # To set this up: Settings → Secrets and variables → Actions → New secret
+          # Name: BIRTHDAY, Value: YYYY-MM-DD (e.g. 2000-01-15)
+          BIRTHDAY: ${{ secrets.BIRTHDAY }}
+        run: python build.py
+
+      - name: Commit and push SVGs
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add light_mode.svg dark_mode.svg
+          # Only commit if something actually changed.
+          if git diff --cached --quiet; then
+            echo "No changes to SVGs — skipping commit."
+          else
+            git commit -m "chore: refresh SVGs [skip ci]"
+            git push
+          fi

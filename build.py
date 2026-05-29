@@ -92,6 +92,16 @@ def plural(n: int) -> str:
     return "s" if n != 1 else ""
 
 
+def resolve_birthday(config: dict) -> Optional[str]:
+    """Resolve birthday from config or BIRTHDAY environment variable.
+
+    Priority: config.birthday → BIRTHDAY env var → None.
+    Config wins so users who prefer to store it in the file don't get
+    surprised by a stale env var. If neither is set, Uptime is omitted.
+    """
+    return config.get("birthday") or os.environ.get("BIRTHDAY") or None
+
+
 def daily_readme(birthday: Optional[str]) -> Optional[str]:
     """Format birthday (YYYY-MM-DD) into 'X years, Y months, Z days'.
 
@@ -272,6 +282,9 @@ def render_svg(config: dict, ascii_lines: list[str], theme: dict) -> str:
 
 def main() -> None:
     config = load_config()
+
+    # Birthday: config.yml value wins; fall back to BIRTHDAY env var (repo secret).
+    config = {**config, "birthday": resolve_birthday(config)}
 
     # Try portrait first, fall back to ascii-art.txt
     portrait_path = image_to_ascii.detect_portrait()

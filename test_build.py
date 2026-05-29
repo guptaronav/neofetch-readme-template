@@ -63,6 +63,32 @@ def test_daily_readme_none_returns_none() -> None:
     assert build.daily_readme("") is None
 
 
+# ─── resolve_birthday ────────────────────────────────────────────────────────
+
+def test_resolve_birthday_uses_config_when_set(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.delenv("BIRTHDAY", raising=False)
+    cfg = {"birthday": "1990-06-15"}
+    assert build.resolve_birthday(cfg) == "1990-06-15"
+
+
+def test_resolve_birthday_falls_back_to_env_var(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("BIRTHDAY", "1995-03-20")
+    cfg = {"birthday": None}
+    assert build.resolve_birthday(cfg) == "1995-03-20"
+
+
+def test_resolve_birthday_config_wins_over_env_var(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("BIRTHDAY", "1995-03-20")
+    cfg = {"birthday": "1990-06-15"}
+    assert build.resolve_birthday(cfg) == "1990-06-15"
+
+
+def test_resolve_birthday_returns_none_when_both_absent(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.delenv("BIRTHDAY", raising=False)
+    cfg = {"birthday": None}
+    assert build.resolve_birthday(cfg) is None
+
+
 # ─── parse_item + dot padding ────────────────────────────────────────────────
 
 def test_parse_item_splits_on_first_colon() -> None:
