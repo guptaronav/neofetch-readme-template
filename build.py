@@ -60,6 +60,7 @@ DEFAULT_CONFIG: dict = {
     "birthday": None,
     "sections": [],
     "target_width": TARGET_WIDTH,
+    "info_x": INFO_X,
 }
 
 
@@ -214,6 +215,7 @@ def render_svg(config: dict, ascii_lines: list[str], theme: dict,
     Pass False when birthday came from a repo secret (privacy path).
     """
     tw = int(config.get("target_width", TARGET_WIDTH))
+    ix = int(config.get("info_x", INFO_X))
     info_tspans: list[str] = []
     y = INFO_Y0
 
@@ -221,7 +223,7 @@ def render_svg(config: dict, ascii_lines: list[str], theme: dict,
     user = html.escape(str(config.get("user", "user")))
     host = html.escape(str(config.get("host", "host")))
     info_tspans.append(
-        f'<tspan x="{INFO_X}" y="{y}">{user}@{host}</tspan>'
+        f'<tspan x="{ix}" y="{y}">{user}@{host}</tspan>'
         ' -———————————————————————————————————————————-—-'
     )
     y += LINE_HEIGHT
@@ -229,7 +231,7 @@ def render_svg(config: dict, ascii_lines: list[str], theme: dict,
     # Optional Uptime line (only if birthday set)
     age = daily_readme(config.get("birthday"), show_days=show_days)
     if age:
-        info_tspans.append(render_item_tspan(INFO_X, y, "Uptime", age, target_width=tw))
+        info_tspans.append(render_item_tspan(ix, y, "Uptime", age, target_width=tw))
         y += LINE_HEIGHT
 
     # Sections
@@ -242,7 +244,7 @@ def render_svg(config: dict, ascii_lines: list[str], theme: dict,
             # blank line before titled section (unless first content after header)
             if i > 0 or age:
                 y += LINE_HEIGHT
-            info_tspans.append(render_section_header(INFO_X, y, title))
+            info_tspans.append(render_section_header(ix, y, title))
             y += LINE_HEIGHT
         elif i > 0:
             # Untitled section after another → just a blank gap
@@ -250,18 +252,22 @@ def render_svg(config: dict, ascii_lines: list[str], theme: dict,
 
         for item_str in items:
             key, value = parse_item(str(item_str))
-            info_tspans.append(render_item_tspan(INFO_X, y, key, value, target_width=tw))
+            info_tspans.append(render_item_tspan(ix, y, key, value, target_width=tw))
             y += LINE_HEIGHT
 
     info_last_y = y - LINE_HEIGHT
     info_rows = (info_last_y - INFO_Y0) // LINE_HEIGHT + 1
     svg_height = max(440, info_last_y + 30)
 
+    # ASCII: rstrip trailing spaces so the art doesn't visually bleed into the
+    # info panel. Trailing spaces are invisible but count toward font advance.
+    stripped_ascii = [line.rstrip() for line in ascii_lines]
+
     # ASCII: scale to fit the same vertical span as info
-    ascii_font, ascii_lh = _pick_ascii_metrics(len(ascii_lines), info_rows)
+    ascii_font, ascii_lh = _pick_ascii_metrics(len(stripped_ascii), info_rows)
     ascii_tspans = [
         f'<tspan x="{ASCII_X}" y="{INFO_Y0 + i * ascii_lh}">{html.escape(line)}</tspan>'
-        for i, line in enumerate(ascii_lines)
+        for i, line in enumerate(stripped_ascii)
     ]
 
     info_block = "\n".join(info_tspans)
@@ -292,7 +298,7 @@ def render_svg(config: dict, ascii_lines: list[str], theme: dict,
         f'font-size="{ascii_font}px" class="ascii">\n'
         f"{ascii_block}\n"
         "</text>\n"
-        f'<text x="{INFO_X}" y="{INFO_Y0}" fill="{theme["fg"]}">\n'
+        f'<text x="{ix}" y="{INFO_Y0}" fill="{theme["fg"]}">\n'
         f"{info_block}\n"
         "</text>\n"
         "</svg>\n"
