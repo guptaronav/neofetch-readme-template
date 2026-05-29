@@ -185,11 +185,20 @@ def render_item_tspan(x: int, y: int, key: str, value: str,
     )
 
 
-def render_section_header(x: int, y: int, title: str) -> str:
-    """Render a '- Title -——————————————' divider line."""
+def render_section_header(x: int, y: int, title: str,
+                          target_width: int = TARGET_WIDTH) -> str:
+    """Render a '- Title -——————————————' divider line.
+
+    The em-dash run is computed from target_width so the underline ends at
+    exactly the same position as the dot-padded content lines below it.
+    Section prefix '- Title' = 2 + len(title) visible chars.
+    Suffix structure: ' -' + '—'×n + '-—-' = 5 + n chars.
+    Total: 2 + len(title) + 5 + n = target_width  →  n = target_width - len(title) - 7.
+    """
+    n = max(0, target_width - len(title) - 7)
     return (
         f'<tspan x="{x}" y="{y}">- {html.escape(title)}</tspan>'
-        ' -——————————————————————————————————————————————-—-'
+        f' -{"—" * n}-—-'
     )
 
 
@@ -216,15 +225,22 @@ def render_svg(config: dict, ascii_lines: list[str], theme: dict,
     """
     tw = int(config.get("target_width", TARGET_WIDTH))
     ix = int(config.get("info_x", INFO_X))
+    # Canvas width: keep the same right-side content area as the original design
+    # (985 - 390 = 595px). Scales automatically when info_x is widened.
+    svg_width = ix + 595
     info_tspans: list[str] = []
     y = INFO_Y0
 
-    # Header line: "user@host -—————"
-    user = html.escape(str(config.get("user", "user")))
-    host = html.escape(str(config.get("host", "host")))
+    # Header line: "user@host -————-—-" — dashes computed to align with content width.
+    user_raw = str(config.get("user", "user"))
+    host_raw = str(config.get("host", "host"))
+    user = html.escape(user_raw)
+    host = html.escape(host_raw)
+    # user@host = len(user_raw)+1+len(host_raw) visible chars; suffix " -…-—-" = 5+n.
+    n_header = max(0, tw - len(user_raw) - 1 - len(host_raw) - 5)
     info_tspans.append(
         f'<tspan x="{ix}" y="{y}">{user}@{host}</tspan>'
-        ' -———————————————————————————————————————————-—-'
+        f' -{("—" * n_header)}-—-'
     )
     y += LINE_HEIGHT
 
@@ -244,7 +260,7 @@ def render_svg(config: dict, ascii_lines: list[str], theme: dict,
             # blank line before titled section (unless first content after header)
             if i > 0 or age:
                 y += LINE_HEIGHT
-            info_tspans.append(render_section_header(ix, y, title))
+            info_tspans.append(render_section_header(ix, y, title, target_width=tw))
             y += LINE_HEIGHT
         elif i > 0:
             # Untitled section after another → just a blank gap
@@ -277,7 +293,7 @@ def render_svg(config: dict, ascii_lines: list[str], theme: dict,
         "<?xml version='1.0' encoding='UTF-8'?>\n"
         f'<svg xmlns="http://www.w3.org/2000/svg" '
         f'font-family="ConsolasFallback,Consolas,monospace" '
-        f'width="985px" height="{svg_height}px" font-size="16px">\n'
+        f'width="{svg_width}px" height="{svg_height}px" font-size="16px">\n'
         "<style>\n"
         "@font-face {\n"
         "src: local('Consolas'), local('Consolas Bold');\n"
@@ -293,7 +309,7 @@ def render_svg(config: dict, ascii_lines: list[str], theme: dict,
         f'.cc {{fill: {theme["cc"]};}}\n'
         "text, tspan {white-space: pre;}\n"
         "</style>\n"
-        f'<rect width="985px" height="{svg_height}px" fill="{theme["bg"]}" rx="15"/>\n'
+        f'<rect width="{svg_width}px" height="{svg_height}px" fill="{theme["bg"]}" rx="15"/>\n'
         f'<text x="{ASCII_X}" y="{INFO_Y0}" fill="{theme["fg"]}" '
         f'font-size="{ascii_font}px" class="ascii">\n'
         f"{ascii_block}\n"
