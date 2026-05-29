@@ -46,8 +46,8 @@ We'll know we're right when **first-time setup completes without needing to open
 
 | # | Milestone | Outcome | Status | Plan |
 |---|---|---|---|---|
-| 1 | Core renderer | A user can edit config.yml, run a single local script, and produce working light/dark SVGs (no Action yet) | in-progress | `.claude/plans/neofetch-readme-template.plan.md` |
-| 2 | Image → ASCII pipeline | User drops `portrait.png`, gets ASCII embedded in SVGs automatically | pending | — |
+| 1 | Core renderer | A user can edit config.yml, run a single local script, and produce working light/dark SVGs (no Action yet) | complete | `.claude/plans/neofetch-readme-template.plan.md` |
+| 2 | Image → ASCII pipeline | User drops `portrait.png`, gets ASCII embedded in SVGs automatically | in-progress | `.claude/plans/neofetch-readme-template.plan.md` |
 | 3 | GitHub Action + optional secrets | Push to main triggers full regen; daily cron refreshes Uptime when BIRTHDAY secret is set | pending | — |
 | 4 | Template-repo polish | "Use this template" works end-to-end; README guides a stranger from zero to live profile in <10 min with screenshots | pending | — |
 

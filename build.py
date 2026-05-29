@@ -2,6 +2,9 @@
 
 Run `python build.py` from the repo root. Reads `config.yml` and `ascii-art.txt`,
 writes `light_mode.svg` and `dark_mode.svg`. That's it.
+
+Automatically converts portrait.png/jpg to ASCII if present in repo root.
+Falls back to ascii-art.txt if no portrait found.
 """
 from __future__ import annotations
 
@@ -14,6 +17,8 @@ from typing import Optional
 
 import yaml
 from dateutil import relativedelta
+
+import image_to_ascii
 
 ROOT = Path(__file__).parent
 CONFIG_PATH = ROOT / "config.yml"
@@ -267,7 +272,10 @@ def render_svg(config: dict, ascii_lines: list[str], theme: dict) -> str:
 
 def main() -> None:
     config = load_config()
-    ascii_lines = load_ascii()
+
+    # Try portrait first, fall back to ascii-art.txt
+    portrait_path = image_to_ascii.detect_portrait()
+    ascii_lines = image_to_ascii.convert_with_fallback(portrait_path, ASCII_PATH)
 
     light = render_svg(config, ascii_lines, LIGHT_THEME)
     dark = render_svg(config, ascii_lines, DARK_THEME)

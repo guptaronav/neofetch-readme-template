@@ -1,4 +1,4 @@
-"""Tests for build.py."""
+"""Tests for build.py and image_to_ascii.py."""
 from __future__ import annotations
 
 import re
@@ -8,6 +8,7 @@ from pathlib import Path
 import pytest
 
 import build
+import image_to_ascii
 
 
 # ─── load_config ─────────────────────────────────────────────────────────────
@@ -176,3 +177,95 @@ def test_main_writes_both_svgs(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) 
     # Both must parse as valid XML
     ET.parse(light)
     ET.parse(dark)
+
+
+# ─── image_to_ascii: portrait detection ──────────────────────────────────────
+
+def test_detect_portrait_finds_png(tmp_path: Path,
+                                   monkeypatch: pytest.MonkeyPatch) -> None:
+    # Create a test portrait.png
+    portrait = tmp_path / "portrait.png"
+    portrait.write_bytes(b"fake png data")
+
+    monkeypatch.setattr(image_to_ascii, "ROOT", tmp_path)
+
+    result = image_to_ascii.detect_portrait()
+
+    assert result == portrait
+
+
+def test_detect_portrait_finds_jpg(tmp_path: Path,
+                                   monkeypatch: pytest.MonkeyPatch) -> None:
+    # Create a test portrait.jpg
+    portrait = tmp_path / "portrait.jpg"
+    portrait.write_bytes(b"fake jpg data")
+
+    monkeypatch.setattr(image_to_ascii, "ROOT", tmp_path)
+
+    result = image_to_ascii.detect_portrait()
+
+    assert result == portrait
+
+
+def test_detect_portrait_missing_returns_none(tmp_path: Path,
+                                              monkeypatch: pytest.MonkeyPatch) -> None:
+    # Empty directory, no portrait files
+
+    monkeypatch.setattr(image_to_ascii, "ROOT", tmp_path)
+
+    result = image_to_ascii.detect_portrait()
+
+    assert result is None
+
+
+# ─── image_to_ascii: conversion ──────────────────────────────────────────────
+
+def test_convert_portrait_returns_list_of_strings(tmp_path: Path) -> None:
+    # Create a minimal valid PNG image using Pillow
+    from PIL import Image
+    img = Image.new('RGB', (10, 5), color='white')
+    portrait = tmp_path / "test.png"
+    img.save(portrait)
+
+    result = image_to_ascii.convert_portrait(portrait, width=10)
+
+    assert isinstance(result, list)
+    assert len(result) > 0
+    assert all(isinstance(line, str) for line in result)
+
+
+def test_convert_portrait_file_missing_raises(tmp_path: Path) -> None:
+    missing = tmp_path / "nonexistent.png"
+
+    with pytest.raises(FileNotFoundError):
+        image_to_ascii.convert_portrait(missing)
+
+
+# ─── image_to_ascii: fallback logic ──────────────────────────────────────────
+
+def test_convert_with_fallback_uses_portrait_if_present(tmp_path: Path) -> None:
+    # Create a test portrait
+    from PIL import Image
+    img = Image.new('RGB', (10, 5), color='black')
+    portrait = tmp_path / "portrait.png"
+    img.save(portrait)
+
+    # Create a fallback file that should NOT be used
+    fallback = tmp_path / "ascii-art.txt"
+    fallback.write_text("FALLBACK\nFALLBACK\n")
+
+    result = image_to_ascii.convert_with_fallback(portrait, fallback)
+
+    # Result should come from portrait, not fallback
+    assert "FALLBACK" not in '\n'.join(result)
+    assert len(result) > 0  # Portrait conversion succeeded
+
+
+def test_convert_with_fallback_uses_fallback_if_no_portrait(tmp_path: Path) -> None:
+    # No portrait file
+    fallback = tmp_path / "ascii-art.txt"
+    fallback.write_text("FALLBACK LINE 1\nFALLBACK LINE 2\n")
+
+    result = image_to_ascii.convert_with_fallback(None, fallback)
+
+    assert result == ["FALLBACK LINE 1", "FALLBACK LINE 2"]

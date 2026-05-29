@@ -2,7 +2,7 @@
 
 A fork-and-customize template for a dynamic neofetch-style GitHub profile README.
 
-> **Status**: Milestone 1 of 4 — local renderer works. Image→ASCII conversion (M2), GitHub Action + secrets (M3), and "Use this template" polish (M4) are coming.
+> **Status**: Milestone 2 of 4 — local renderer + automatic portrait→ASCII conversion work. GitHub Action + secrets (M3) and "Use this template" polish (M4) are coming.
 
 ## Quick start (local)
 
@@ -18,12 +18,28 @@ You'll get two files: `light_mode.svg` and `dark_mode.svg`. Open them to preview
 
 ## What you edit
 
-Only two files. Everything else is generated.
+Only three items. Everything else is generated.
 
-| File | What it controls |
+| Item | What it controls |
 |---|---|
 | `config.yml` | Every neofetch field — user, host, OS, languages, hobbies, contact, etc. |
-| `ascii-art.txt` | The ASCII art on the left side. Drop in any monospace ASCII (~40×20 chars fits best). |
+| `portrait.png` or `portrait.jpg` | **Optional**: Drop your portrait here. Automatically converts to ASCII art (replaces `ascii-art.txt`). |
+| `ascii-art.txt` | **Fallback**: The ASCII art on the left side. Used only if no portrait image is present. |
+
+## Auto ASCII portrait
+
+Drop a portrait image in the repo root and the build system converts it to ASCII automatically:
+
+1. **Save your portrait** as `portrait.png` or `portrait.jpg` in the repo root
+2. **Run the build**: `python build.py`
+3. **Done**: ASCII version embeds in both light/dark SVGs
+
+**Image tips**:
+- High contrast works best (bright face, dark background or vice versa)
+- Square crop is ideal (tool resizes to 50×25 characters)
+- Monospace displays ~50 chars wide
+
+If no portrait is found, the build falls back to `ascii-art.txt` so you always have output.
 
 ## Birthday → Uptime counter
 
@@ -39,7 +55,7 @@ pytest test_build.py -v
 ## Roadmap
 
 - [x] **M1** — Core renderer: `config.yml` → SVGs via `python build.py`
-- [ ] **M2** — Drop a `portrait.png` in the repo, get ASCII automatically
+- [x] **M2** — Drop a `portrait.png` in the repo, get ASCII automatically
 - [ ] **M3** — GitHub Action: daily refresh + optional `BIRTHDAY` repo secret
 - [ ] **M4** — One-click "Use this template" with screenshots and walkthrough
 
