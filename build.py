@@ -47,19 +47,20 @@ DARK_THEME = {
     "delete": "#f85149",
 }
 
-DEFAULT_CONFIG: dict = {
-    "user": "user",
-    "host": "host",
-    "birthday": None,
-    "sections": [],
-}
-
 # Layout constants — match the upstream guptaronav SVG geometry.
 INFO_X = 390
 INFO_Y0 = 30
 LINE_HEIGHT = 20
 ASCII_X = 15
-TARGET_WIDTH = 58  # target visible-char width per line for dot alignment
+TARGET_WIDTH = 58  # default visible-char width per line for dot alignment
+
+DEFAULT_CONFIG: dict = {
+    "user": "user",
+    "host": "host",
+    "birthday": None,
+    "sections": [],
+    "target_width": TARGET_WIDTH,
+}
 
 
 # ─── Config + helpers ─────────────────────────────────────────────────────────
@@ -92,30 +93,44 @@ def plural(n: int) -> str:
     return "s" if n != 1 else ""
 
 
-def resolve_birthday(config: dict) -> Optional[str]:
-    """Resolve birthday from config or BIRTHDAY environment variable.
+def resolve_birthday(config: dict) -> tuple[Optional[str], bool]:
+    """Resolve birthday and whether to show the day component.
+
+    Returns (birthday_str, show_days).
 
     Priority: config.birthday → BIRTHDAY env var → None.
-    Config wins so users who prefer to store it in the file don't get
-    surprised by a stale env var. If neither is set, Uptime is omitted.
+    - Config path  → show_days=True  (full "X years, Y months, Z days")
+    - Env-var path → show_days=False (only "X years, Y months"; days omitted
+                     because env var is typically a repo secret and days can
+                     narrow down a birth date too precisely)
     """
-    return config.get("birthday") or os.environ.get("BIRTHDAY") or None
+    config_bday = config.get("birthday") or None
+    if config_bday:
+        return config_bday, True
+    env_bday = os.environ.get("BIRTHDAY") or None
+    if env_bday:
+        return env_bday, False
+    return None, True
 
 
-def daily_readme(birthday: Optional[str]) -> Optional[str]:
-    """Format birthday (YYYY-MM-DD) into 'X years, Y months, Z days'.
+def daily_readme(birthday: Optional[str], show_days: bool = True) -> Optional[str]:
+    """Format birthday (YYYY-MM-DD) into an age string.
 
-    Returns None if `birthday` is falsy (so the Uptime line is omitted).
+    Returns 'X years, Y months, Z days' when show_days is True, or
+    'X years, Y months' when show_days is False (secret / privacy path).
+    Returns None if `birthday` is falsy so the Uptime line is omitted.
     """
     if not birthday:
         return None
     bd = datetime.datetime.strptime(birthday, "%Y-%m-%d")
     diff = relativedelta.relativedelta(datetime.datetime.today(), bd)
-    return (
+    age = (
         f"{diff.years} year{plural(diff.years)}, "
-        f"{diff.months} month{plural(diff.months)}, "
-        f"{diff.days} day{plural(diff.days)}"
+        f"{diff.months} month{plural(diff.months)}"
     )
+    if show_days:
+        age += f", {diff.days} day{plural(diff.days)}"
+    return age
 
 
 def parse_item(item_str: str) -> tuple[str, str]:
@@ -191,8 +206,14 @@ def _pick_ascii_metrics(ascii_count: int, info_rows: int) -> tuple[int, int]:
     return font, lh
 
 
-def render_svg(config: dict, ascii_lines: list[str], theme: dict) -> str:
-    """Render the full SVG XML string from config + ASCII + theme."""
+def render_svg(config: dict, ascii_lines: list[str], theme: dict,
+               show_days: bool = True) -> str:
+    """Render the full SVG XML string from config + ASCII + theme.
+
+    show_days controls whether the Uptime line includes the day component.
+    Pass False when birthday came from a repo secret (privacy path).
+    """
+    tw = int(config.get("target_width", TARGET_WIDTH))
     info_tspans: list[str] = []
     y = INFO_Y0
 
@@ -206,9 +227,9 @@ def render_svg(config: dict, ascii_lines: list[str], theme: dict) -> str:
     y += LINE_HEIGHT
 
     # Optional Uptime line (only if birthday set)
-    age = daily_readme(config.get("birthday"))
+    age = daily_readme(config.get("birthday"), show_days=show_days)
     if age:
-        info_tspans.append(render_item_tspan(INFO_X, y, "Uptime", age))
+        info_tspans.append(render_item_tspan(INFO_X, y, "Uptime", age, target_width=tw))
         y += LINE_HEIGHT
 
     # Sections
@@ -229,7 +250,7 @@ def render_svg(config: dict, ascii_lines: list[str], theme: dict) -> str:
 
         for item_str in items:
             key, value = parse_item(str(item_str))
-            info_tspans.append(render_item_tspan(INFO_X, y, key, value))
+            info_tspans.append(render_item_tspan(INFO_X, y, key, value, target_width=tw))
             y += LINE_HEIGHT
 
     info_last_y = y - LINE_HEIGHT
@@ -283,15 +304,17 @@ def render_svg(config: dict, ascii_lines: list[str], theme: dict) -> str:
 def main() -> None:
     config = load_config()
 
-    # Birthday: config.yml value wins; fall back to BIRTHDAY env var (repo secret).
-    config = {**config, "birthday": resolve_birthday(config)}
+    # Birthday: config.yml wins; env var (repo secret) is the fallback.
+    # show_days=False when using the secret path — days omitted for privacy.
+    birthday, show_days = resolve_birthday(config)
+    config = {**config, "birthday": birthday}
 
     # Try portrait first, fall back to ascii-art.txt
     portrait_path = image_to_ascii.detect_portrait()
     ascii_lines = image_to_ascii.convert_with_fallback(portrait_path, ASCII_PATH)
 
-    light = render_svg(config, ascii_lines, LIGHT_THEME)
-    dark = render_svg(config, ascii_lines, DARK_THEME)
+    light = render_svg(config, ascii_lines, LIGHT_THEME, show_days=show_days)
+    dark = render_svg(config, ascii_lines, DARK_THEME, show_days=show_days)
 
     OUT_LIGHT.write_text(light)
     OUT_DARK.write_text(dark)

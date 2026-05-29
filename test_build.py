@@ -68,25 +68,61 @@ def test_daily_readme_none_returns_none() -> None:
 def test_resolve_birthday_uses_config_when_set(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.delenv("BIRTHDAY", raising=False)
     cfg = {"birthday": "1990-06-15"}
-    assert build.resolve_birthday(cfg) == "1990-06-15"
+    bday, show_days = build.resolve_birthday(cfg)
+    assert bday == "1990-06-15"
+    assert show_days is True  # config path → show days
 
 
 def test_resolve_birthday_falls_back_to_env_var(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv("BIRTHDAY", "1995-03-20")
     cfg = {"birthday": None}
-    assert build.resolve_birthday(cfg) == "1995-03-20"
+    bday, show_days = build.resolve_birthday(cfg)
+    assert bday == "1995-03-20"
+    assert show_days is False  # secret path → hide days
 
 
 def test_resolve_birthday_config_wins_over_env_var(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv("BIRTHDAY", "1995-03-20")
     cfg = {"birthday": "1990-06-15"}
-    assert build.resolve_birthday(cfg) == "1990-06-15"
+    bday, show_days = build.resolve_birthday(cfg)
+    assert bday == "1990-06-15"
+    assert show_days is True  # config path → show days
 
 
 def test_resolve_birthday_returns_none_when_both_absent(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.delenv("BIRTHDAY", raising=False)
     cfg = {"birthday": None}
-    assert build.resolve_birthday(cfg) is None
+    bday, show_days = build.resolve_birthday(cfg)
+    assert bday is None
+    assert show_days is True  # irrelevant but defaults to True
+
+
+# ─── daily_readme show_days ───────────────────────────────────────────────────
+
+def test_daily_readme_hides_days_when_show_days_false() -> None:
+    age = build.daily_readme("2000-01-01", show_days=False)
+    assert age is not None
+    assert "day" not in age
+    assert re.match(r"^\d+ years?, \d+ months?$", age)
+
+
+def test_daily_readme_shows_days_by_default() -> None:
+    age = build.daily_readme("2000-01-01")
+    assert age is not None
+    assert "day" in age
+
+
+def test_render_svg_uptime_hides_days_on_secret_path() -> None:
+    svg = build.render_svg(_make_cfg(birthday="2000-01-01"), ["x"],
+                           build.LIGHT_THEME, show_days=False)
+    assert "Uptime" in svg
+    assert "day" not in svg  # days stripped for privacy
+
+
+def test_render_svg_uptime_shows_days_on_config_path() -> None:
+    svg = build.render_svg(_make_cfg(birthday="2000-01-01"), ["x"],
+                           build.LIGHT_THEME, show_days=True)
+    assert "day" in svg
 
 
 # ─── parse_item + dot padding ────────────────────────────────────────────────
