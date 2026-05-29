@@ -1,0 +1,51 @@
+# ─────────────────────────────────────────────────────────────────
+# Neofetch Profile README — your config
+# ─────────────────────────────────────────────────────────────────
+# Edit this file, run `python build.py`, and your SVGs regenerate.
+# That's the whole thing. No code to touch.
+# ─────────────────────────────────────────────────────────────────
+
+# Top header: appears as "user@host" at the top of the box.
+user: yourname
+host: localhost
+
+# Optional birthday for the dynamic "Uptime" counter (years/months/days since).
+# Format: YYYY-MM-DD. Leave as `null` to hide the Uptime line entirely.
+# Tip: in Milestone 3 (GitHub Action), this gets overridden by a repo secret
+# so you never have to commit your real birthday.
+birthday: null
+
+# Sections render top-to-bottom in the order listed here.
+#
+# Each section has:
+#   - title:  a string like "Contact" → renders as "- Contact -—————" divider.
+#             Use "" (empty) for an unlabeled group (e.g., the system info up top).
+#   - items:  list of "Key: Value" strings, exactly as they should appear.
+#
+# Add, remove, reorder anything. The renderer adapts the layout automatically.
+
+sections:
+  - title: ""
+    items:
+      - "OS: macOS"
+      - "Host: Your Org"
+      - "Kernel: Engineer"
+      - "IDE: VS Code"
+      - "Shell: zsh"
+
+  - title: ""
+    items:
+      - "Languages.Programming: Python, TypeScript"
+      - "Languages.Computer: HTML, CSS, JSON, YAML"
+      - "Languages.Real: English"
+
+  - title: ""
+    items:
+      - "Hobbies.Software: Game Dev, Open Source"
+      - "Hobbies.Hardware: 3D Printing"
+
+  - title: "Contact"
+    items:
+      - "Email: you@example.com"
+      - "Discord: yourhandle"
+      - "Website: example.com"
