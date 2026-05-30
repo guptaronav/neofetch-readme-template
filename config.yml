@@ -11,10 +11,11 @@
 user: yourname
 host: github
 
-# Optional Uptime counter — shows your age as X years, Y months, Z days.
-# Format: YYYY-MM-DD. Set null to hide the line entirely.
-# Keep your birthday private: leave null here, add a BIRTHDAY repo secret instead
-# (Settings → Secrets and variables → Actions → New repository secret).
+# Uptime counter — shows "X years, Y months" since your birthday.
+# Store the date as a repo secret, NOT here (keep it out of your public repo):
+#   Settings → Secrets and variables → Actions → New repository secret
+#   Name: BIRTHDAY   Value: YYYY-MM-DD
+# Leave null (or omit entirely) to hide the Uptime line.
 birthday: null
 
 # ─────────────────────────────────────────────────────────────────

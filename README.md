@@ -26,7 +26,8 @@ Clone your new repo and open `config.yml`. Fill in your info — every field has
 user: yourname
 host: github
 
-birthday: null          # or "YYYY-MM-DD" — powers the Uptime counter
+# birthday stays null here — add the date as a repo secret instead (see below)
+birthday: null
 
 sections:
   - title: ""
@@ -81,25 +82,19 @@ GitHub automatically shows this on your profile page. Done.
 
 ---
 
-## Keep Uptime fresh (optional)
+## Uptime counter (optional)
 
-The **Uptime** line counts years/months/days since your birthday. The GitHub Action in this repo regenerates your SVGs daily so it stays accurate.
+The **Uptime** line shows how long you've been alive — "X years, Y months" — and updates daily via the included GitHub Action.
 
-**Option A — store birthday in config.yml** (simpler):
+To enable it, add your birthday as a **repo secret** (never in the config file — keep it out of your public repo):
 
-```yaml
-birthday: "2000-01-15"
-```
+1. Go to your repo → **Settings → Secrets and variables → Actions**
+2. Click **New repository secret**
+   - **Name:** `BIRTHDAY`
+   - **Value:** `2000-01-15`  *(your actual date, YYYY-MM-DD)*
+3. Leave `birthday: null` in `config.yml` (or omit it entirely)
 
-**Option B — keep it private with a repo secret**:
-
-1. Leave `birthday: null` in `config.yml`
-2. Go to your repo → **Settings → Secrets and variables → Actions**
-3. Click **New repository secret**
-   - Name: `BIRTHDAY`
-   - Value: `2000-01-15`
-
-The Action picks it up automatically on every push and daily at midnight UTC.
+The Action reads the secret automatically on every push and daily at 00:15 UTC. Days are intentionally omitted from the output to avoid narrowing down your exact birth date.
 
 ---
 
@@ -122,7 +117,7 @@ python3 -m pip install pytest
 python3 -m pytest test_build.py -v
 ```
 
-29 tests, covering config loading, ASCII conversion, age formatting, HTML escaping, SVG validity, theme rendering, and birthday secret fallback.
+Tests cover config loading, ASCII conversion, age formatting, HTML escaping, SVG validity, theme rendering, and the birthday secret.
 
 ---
 

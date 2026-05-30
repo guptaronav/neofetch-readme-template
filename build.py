@@ -94,44 +94,33 @@ def plural(n: int) -> str:
     return "s" if n != 1 else ""
 
 
-def resolve_birthday(config: dict) -> tuple[Optional[str], bool]:
-    """Resolve birthday and whether to show the day component.
+def resolve_birthday() -> Optional[str]:
+    """Read birthday from the BIRTHDAY environment variable (repo secret) only.
 
-    Returns (birthday_str, show_days).
-
-    Priority: config.birthday → BIRTHDAY env var → None.
-    - Config path  → show_days=True  (full "X years, Y months, Z days")
-    - Env-var path → show_days=False (only "X years, Y months"; days omitted
-                     because env var is typically a repo secret and days can
-                     narrow down a birth date too precisely)
+    Returns the YYYY-MM-DD string, or None if the secret is not set.
+    The config-file path is intentionally not supported — storing a birth date
+    in a public repo is a privacy risk. Use a repo secret instead:
+    Settings → Secrets and variables → Actions → New repository secret
+    (Name: BIRTHDAY, Value: YYYY-MM-DD).
     """
-    config_bday = config.get("birthday") or None
-    if config_bday:
-        return config_bday, True
-    env_bday = os.environ.get("BIRTHDAY") or None
-    if env_bday:
-        return env_bday, False
-    return None, True
+    return os.environ.get("BIRTHDAY") or None
 
 
-def daily_readme(birthday: Optional[str], show_days: bool = True) -> Optional[str]:
-    """Format birthday (YYYY-MM-DD) into an age string.
+def daily_readme(birthday: Optional[str]) -> Optional[str]:
+    """Format birthday (YYYY-MM-DD) into 'X years, Y months' age string.
 
-    Returns 'X years, Y months, Z days' when show_days is True, or
-    'X years, Y months' when show_days is False (secret / privacy path).
-    Returns None if `birthday` is falsy so the Uptime line is omitted.
+    Days are always omitted — birthday comes from a repo secret, and including
+    days narrows the date down too precisely.
+    Returns None if `birthday` is falsy so the Uptime line is omitted entirely.
     """
     if not birthday:
         return None
     bd = datetime.datetime.strptime(birthday, "%Y-%m-%d")
     diff = relativedelta.relativedelta(datetime.datetime.today(), bd)
-    age = (
+    return (
         f"{diff.years} year{plural(diff.years)}, "
         f"{diff.months} month{plural(diff.months)}"
     )
-    if show_days:
-        age += f", {diff.days} day{plural(diff.days)}"
-    return age
 
 
 def parse_item(item_str: str) -> tuple[str, str]:
@@ -216,13 +205,8 @@ def _pick_ascii_metrics(ascii_count: int, info_rows: int) -> tuple[int, int]:
     return font, lh
 
 
-def render_svg(config: dict, ascii_lines: list[str], theme: dict,
-               show_days: bool = True) -> str:
-    """Render the full SVG XML string from config + ASCII + theme.
-
-    show_days controls whether the Uptime line includes the day component.
-    Pass False when birthday came from a repo secret (privacy path).
-    """
+def render_svg(config: dict, ascii_lines: list[str], theme: dict) -> str:
+    """Render the full SVG XML string from config + ASCII + theme."""
     tw = int(config.get("target_width", TARGET_WIDTH))
     ix = int(config.get("info_x", INFO_X))
     # Canvas width: keep the same right-side content area as the original design
@@ -244,8 +228,8 @@ def render_svg(config: dict, ascii_lines: list[str], theme: dict,
     )
     y += LINE_HEIGHT
 
-    # Optional Uptime line (only if birthday set)
-    age = daily_readme(config.get("birthday"), show_days=show_days)
+    # Optional Uptime line — present only when BIRTHDAY secret is set
+    age = daily_readme(config.get("birthday"))
     if age:
         info_tspans.append(render_item_tspan(ix, y, "Uptime", age, target_width=tw))
         y += LINE_HEIGHT
@@ -326,17 +310,17 @@ def render_svg(config: dict, ascii_lines: list[str], theme: dict,
 def main() -> None:
     config = load_config()
 
-    # Birthday: config.yml wins; env var (repo secret) is the fallback.
-    # show_days=False when using the secret path — days omitted for privacy.
-    birthday, show_days = resolve_birthday(config)
+    # Birthday comes exclusively from the BIRTHDAY repo secret (env var).
+    # Days are always omitted for privacy.
+    birthday = resolve_birthday()
     config = {**config, "birthday": birthday}
 
     # Try portrait first, fall back to ascii-art.txt
     portrait_path = image_to_ascii.detect_portrait()
     ascii_lines = image_to_ascii.convert_with_fallback(portrait_path, ASCII_PATH)
 
-    light = render_svg(config, ascii_lines, LIGHT_THEME, show_days=show_days)
-    dark = render_svg(config, ascii_lines, DARK_THEME, show_days=show_days)
+    light = render_svg(config, ascii_lines, LIGHT_THEME)
+    dark = render_svg(config, ascii_lines, DARK_THEME)
 
     OUT_LIGHT.write_text(light)
     OUT_DARK.write_text(dark)
